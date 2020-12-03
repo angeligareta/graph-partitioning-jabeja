@@ -97,18 +97,18 @@ public class Jabeja {
     public Node findPartner(int currentNodeId, Integer[] nodesIds) {
         Node currentNode = entireGraph.get(currentNodeId);
 
-        double highestBenefit = 0;
+        double maxSumNodeDegrees = 0;
         Node bestPartner = null;
 
         for (int nodeId : nodesIds) {
             Node node = entireGraph.get(nodeId);
             // If the colors are different
             if (node.getColor() != currentNode.getColor()) {
-                int oldEnergy = getDegree(currentNode, currentNode.getColor()) + getDegree(node, node.getColor());
-                int newEnergy = getDegree(currentNode, node.getColor()) + getDegree(node, currentNode.getColor());
-                if ((newEnergy * temperature > oldEnergy) && (newEnergy > highestBenefit)) {
+                int oldSumNodeDegrees = getDegree(currentNode, currentNode.getColor()) + getDegree(node, node.getColor());
+                int newSumNodeDegrees = getDegree(currentNode, node.getColor()) + getDegree(node, currentNode.getColor());
+                if ((newSumNodeDegrees * temperature > oldSumNodeDegrees) && (newSumNodeDegrees > maxSumNodeDegrees)) {
                     bestPartner = node;
-                    highestBenefit = newEnergy; // We don't calculate the gain because the aim is just to have max number degree
+                    maxSumNodeDegrees = newSumNodeDegrees; // We don't calculate the gain because the aim is just to have max number degree
                 }
             }
         }
