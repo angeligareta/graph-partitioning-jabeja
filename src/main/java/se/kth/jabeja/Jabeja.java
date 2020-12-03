@@ -36,27 +36,28 @@ public class Jabeja {
 
     //-------------------------------------------------------------------
     public void startJabeja() throws IOException {
-        for (round = 0; round < config.getRounds(); round++) {
+        // Replaced by simulated annealing
+//        for (round = 0; round < config.getRounds(); round++) {
+//        }
+        double minTemperature = 0.00001; // Should we add this to config?
+        while (temperature > minTemperature) {
             for (int id : entireGraph.keySet()) {
                 sampleAndSwap(id);
             }
 
-            //one cycle for all nodes have completed.
-            //reduce the temperature
+            // One cycle for all nodes have completed.
             saCoolDown();
             report();
+
+            // TODO: Hypertune by reseting temperature x times to converge more than one time
         }
     }
 
     /**
-     * Simulated analealing cooling function
+     * Simulated annealing cooling function
      */
     private void saCoolDown() {
-        // TODO for second task
-        if (temperature > 1)
-            temperature -= config.getDelta();
-        if (temperature < 1)
-            temperature = 1;
+        temperature *= config.getDelta();
     }
 
     /**
@@ -117,14 +118,19 @@ public class Jabeja {
 
                 double oldSumNodeDegrees = Math.pow(oldDegreeCurrentNode, config.getAlpha()) + Math.pow(oldDegreeNode, config.getAlpha());
                 double newSumNodeDegrees = Math.pow(newDegreeCurrentNode, config.getAlpha()) + Math.pow(newDegreeNode, config.getAlpha());
-                if ((newSumNodeDegrees * temperature > oldSumNodeDegrees) && (newSumNodeDegrees > maxSumNodeDegrees)) {
+                double acceptanceProbability = getAcceptance(oldSumNodeDegrees, newSumNodeDegrees);
+                if (acceptanceProbability > Math.random()) { // Should we consider maxSumNodeDegrees?
                     bestPartner = node;
-                    maxSumNodeDegrees = newSumNodeDegrees; // We don't calculate the gain because the aim is just to have max number degree
+                    // maxSumNodeDegrees = newSumNodeDegrees; // We don't calculate the gain because the aim is just to have max number degree
                 }
             }
         }
 
         return bestPartner;
+    }
+
+    public double getAcceptance(double oldEdgeCut, double newEdgeCut) {
+        return Math.exp((newEdgeCut - oldEdgeCut) / temperature);
     }
 
     /**
