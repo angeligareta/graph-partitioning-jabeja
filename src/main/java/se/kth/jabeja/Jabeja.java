@@ -10,13 +10,14 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.lang.Math;
 import java.util.List;
 
 public class Jabeja {
     final static Logger logger = Logger.getLogger(Jabeja.class);
     private final Config config;
     private final HashMap<Integer/*id*/, Node/*neighbors*/> entireGraph;
-    private final List<Integer> nodeIds;
+    private final ArrayList<Integer> nodeIds;
     private int numberOfSwaps;
     private int round;
     private float temperature;
@@ -96,6 +97,8 @@ public class Jabeja {
 
     public Node findPartner(int currentNodeId, Integer[] nodesIds) {
         Node currentNode = entireGraph.get(currentNodeId);
+        int currentNodeDegree = currentNode.getDegree();
+        int oldDegreeCurrentNode = getDegree(currentNode, currentNode.getColor());
 
         double maxSumNodeDegrees = 0;
         Node bestPartner = null;
@@ -104,8 +107,16 @@ public class Jabeja {
             Node node = entireGraph.get(nodeId);
             // If the colors are different
             if (node.getColor() != currentNode.getColor()) {
-                int oldSumNodeDegrees = getDegree(currentNode, currentNode.getColor()) + getDegree(node, node.getColor());
-                int newSumNodeDegrees = getDegree(currentNode, node.getColor()) + getDegree(node, currentNode.getColor());
+                // Modification considering the proportion of neighbors divided into total neighbors
+                //int nodeDegree = node.getDegree();
+                //float oldSumNodeDegrees = (float) getDegree(currentNode, currentNode.getColor()) / currentNodeDegree + (float) getDegree(node, node.getColor()) / nodeDegree;
+                //float newSumNodeDegrees = (float) getDegree(currentNode, node.getColor()) / currentNodeDegree + (float) getDegree(node, currentNode.getColor()) / nodeDegree;
+                int oldDegreeNode = getDegree(node, node.getColor());
+                int newDegreeCurrentNode = getDegree(currentNode, node.getColor());
+                int newDegreeNode = getDegree(node, currentNode.getColor());
+
+                double oldSumNodeDegrees = Math.pow(oldDegreeCurrentNode, config.getAlpha()) + Math.pow(oldDegreeNode, config.getAlpha());
+                double newSumNodeDegrees = Math.pow(newDegreeCurrentNode, config.getAlpha()) + Math.pow(newDegreeNode, config.getAlpha());
                 if ((newSumNodeDegrees * temperature > oldSumNodeDegrees) && (newSumNodeDegrees > maxSumNodeDegrees)) {
                     bestPartner = node;
                     maxSumNodeDegrees = newSumNodeDegrees; // We don't calculate the gain because the aim is just to have max number degree
