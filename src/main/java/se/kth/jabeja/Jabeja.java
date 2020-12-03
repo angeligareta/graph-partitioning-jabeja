@@ -48,6 +48,7 @@ public class Jabeja {
             // One cycle for all nodes have completed.
             saCoolDown();
             report();
+            round ++; // Shall we use getRounds?
 
             // TODO: Hypertune by reseting temperature x times to converge more than one time
         }
