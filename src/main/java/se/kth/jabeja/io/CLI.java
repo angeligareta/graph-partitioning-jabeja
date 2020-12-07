@@ -32,7 +32,7 @@ public class CLI {
   private float TEMPERATURE = 2;
 
   @Option(name = "-delta", usage = "Simulated annealing delta.")
-  private float DELTA = (float) 0.003;
+  private float DELTA = (float) 0.01;
 
   @Option(name = "-seed", usage = "Seed.")
   private int SEED = 0;
