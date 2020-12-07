@@ -37,18 +37,25 @@ public class Jabeja {
     //-------------------------------------------------------------------
     public void startJabeja() throws IOException {
         // Replaced by simulated annealing
-//        for (round = 0; round < config.getRounds(); round++) {
-//        }
         double minTemperature = 0.00001; // Should we add this to config?
-        while (temperature > minTemperature) {
+        //double minTemperature = 1; // Should we add this to config?
+        for (round = 0; round < config.getRounds(); round++) {
+//        while (temperature > minTemperature) {
+
+            if(round % 400 == 0)
+                temperature = config.getTemperature();
+
             for (int id : entireGraph.keySet()) {
                 sampleAndSwap(id);
             }
 
             // One cycle for all nodes have completed.
-            saCoolDown();
+
+            if(temperature > minTemperature)
+                saCoolDown();
+
             report();
-            round ++; // Shall we use getRounds?
+            //round ++; // Shall we use getRounds?
 
             // TODO: Hypertune by reseting temperature x times to converge more than one time
         }
@@ -58,11 +65,12 @@ public class Jabeja {
      * Simulated annealing cooling function
      */
     private void saCoolDown() {
-        temperature *= config.getDelta();
+        temperature *= 0.9;
+        //temperature -= config.getDelta();
     }
 
     /**
-     * Sample and swap algorith at node p
+     * Sample and swap algorithm at node p
      *
      * @param currentNodeId
      */
@@ -101,7 +109,6 @@ public class Jabeja {
         Node currentNode = entireGraph.get(currentNodeId);
         int currentNodeDegree = currentNode.getDegree();
         int oldDegreeCurrentNode = getDegree(currentNode, currentNode.getColor());
-
         double maxSumNodeDegrees = 0;
         Node bestPartner = null;
 
@@ -120,8 +127,10 @@ public class Jabeja {
                 double oldSumNodeDegrees = Math.pow(oldDegreeCurrentNode, config.getAlpha()) + Math.pow(oldDegreeNode, config.getAlpha());
                 double newSumNodeDegrees = Math.pow(newDegreeCurrentNode, config.getAlpha()) + Math.pow(newDegreeNode, config.getAlpha());
                 double acceptanceProbability = getAcceptance(oldSumNodeDegrees, newSumNodeDegrees);
-                if (acceptanceProbability > Math.random()) { // Should we consider maxSumNodeDegrees?
-                    bestPartner = node;
+                if (acceptanceProbability > Math.random() && newSumNodeDegrees > maxSumNodeDegrees) { // Should we consider maxSumNodeDegrees?
+                //if (newSumNodeDegrees * temperature > oldSumNodeDegrees && newSumNodeDegrees > maxSumNodeDegrees) {
+                  bestPartner = node;
+                  maxSumNodeDegrees = newSumNodeDegrees;
                     // maxSumNodeDegrees = newSumNodeDegrees; // We don't calculate the gain because the aim is just to have max number degree
                 }
             }
@@ -255,7 +264,7 @@ public class Jabeja {
     }
 
     private void saveToFile(int edgeCuts, int migrations) throws IOException {
-        String delimiter = "\t\t";
+        String delimiter = ",";
         String outputFilePath;
 
         //output file name
@@ -270,7 +279,7 @@ public class Jabeja {
                 "RNSS" + "_" + config.getRandomNeighborSampleSize() + "_" +
                 "URSS" + "_" + config.getUniformRandomSampleSize() + "_" +
                 "A" + "_" + config.getAlpha() + "_" +
-                "R" + "_" + config.getRounds() + ".txt";
+                "R" + "_" + config.getRounds() + ".csv";
 
         if (!resultFileCreated) {
             File outputDir = new File(config.getOutputDir());
@@ -280,8 +289,8 @@ public class Jabeja {
                 }
             }
             // create folder and result file with header
-            String header = "# Migration is number of nodes that have changed color.";
-            header += "\n\nRound" + delimiter + "Edge-Cut" + delimiter + "Swaps" + delimiter + "Migrations" + delimiter + "Skipped" + "\n";
+            //String header = "# Migration is number of nodes that have changed color.";
+            String header = "Round" + delimiter + "Edge-Cut" + delimiter + "Swaps" + delimiter + "Migrations" + delimiter + "Skipped" + "\n";
             FileIO.write(header, outputFilePath);
             resultFileCreated = true;
         }

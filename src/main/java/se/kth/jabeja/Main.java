@@ -12,7 +12,7 @@ import java.util.HashMap;
 
 
 public class Main {
-    final static Logger logger = Logger.getLogger(Main.class);
+    static final Logger logger = Logger.getLogger(Main.class);
 
     /**
      * Holds all the configurations parameters.
