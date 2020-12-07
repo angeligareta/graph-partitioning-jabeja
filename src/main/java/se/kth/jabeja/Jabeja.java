@@ -11,16 +11,17 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.lang.Math;
-import java.util.List;
 
 public class Jabeja {
     final static Logger logger = Logger.getLogger(Jabeja.class);
+    public static final String TEXT_FILE = "\t\t";
+    public static final String CSV_FILE = ",";
     private final Config config;
     private final HashMap<Integer/*id*/, Node/*neighbors*/> entireGraph;
     private final ArrayList<Integer> nodeIds;
     private int numberOfSwaps;
     private int round;
-    private float temperature;
+    private double temperature;
     private boolean resultFileCreated = false;
 
     //-------------------------------------------------------------------
@@ -36,28 +37,24 @@ public class Jabeja {
 
     //-------------------------------------------------------------------
     public void startJabeja() throws IOException {
-        // Replaced by simulated annealing
-        double minTemperature = 0.00001; // Should we add this to config?
-        //double minTemperature = 1; // Should we add this to config?
+        double minTemperature = config.getUseAcceptanceProbability() ? 0.00001 : 1;
+
         for (round = 0; round < config.getRounds(); round++) {
-//        while (temperature > minTemperature) {
-
-            if(round % 400 == 0)
-                temperature = config.getTemperature();
-
             for (int id : entireGraph.keySet()) {
                 sampleAndSwap(id);
             }
 
-            // One cycle for all nodes have completed.
+            // Hypertune by reseting temperature x times to converge more than one time
+            if ((config.getResetEachNIteration() > 0) && (round % config.getResetEachNIteration() == 0)) {
+                temperature = config.getTemperature();
+            }
 
-            if(temperature > minTemperature)
+            // One cycle for all nodes have completed.
+            if (temperature > minTemperature) {
                 saCoolDown();
+            }
 
             report();
-            //round ++; // Shall we use getRounds?
-
-            // TODO: Hypertune by reseting temperature x times to converge more than one time
         }
     }
 
@@ -65,8 +62,12 @@ public class Jabeja {
      * Simulated annealing cooling function
      */
     private void saCoolDown() {
-        temperature *= 0.9;
-        //temperature -= config.getDelta();
+        if (config.getUseAcceptanceProbability()) {
+            temperature *= config.getDelta();
+        }
+        else {
+            temperature -= config.getDelta();
+        }
     }
 
     /**
@@ -107,7 +108,6 @@ public class Jabeja {
 
     public Node findPartner(int currentNodeId, Integer[] nodesIds) {
         Node currentNode = entireGraph.get(currentNodeId);
-        int currentNodeDegree = currentNode.getDegree();
         int oldDegreeCurrentNode = getDegree(currentNode, currentNode.getColor());
         double maxSumNodeDegrees = 0;
         Node bestPartner = null;
@@ -116,22 +116,25 @@ public class Jabeja {
             Node node = entireGraph.get(nodeId);
             // If the colors are different
             if (node.getColor() != currentNode.getColor()) {
-                // Modification considering the proportion of neighbors divided into total neighbors
-                //int nodeDegree = node.getDegree();
-                //float oldSumNodeDegrees = (float) getDegree(currentNode, currentNode.getColor()) / currentNodeDegree + (float) getDegree(node, node.getColor()) / nodeDegree;
-                //float newSumNodeDegrees = (float) getDegree(currentNode, node.getColor()) / currentNodeDegree + (float) getDegree(node, currentNode.getColor()) / nodeDegree;
                 int oldDegreeNode = getDegree(node, node.getColor());
                 int newDegreeCurrentNode = getDegree(currentNode, node.getColor());
                 int newDegreeNode = getDegree(node, currentNode.getColor());
 
                 double oldSumNodeDegrees = Math.pow(oldDegreeCurrentNode, config.getAlpha()) + Math.pow(oldDegreeNode, config.getAlpha());
                 double newSumNodeDegrees = Math.pow(newDegreeCurrentNode, config.getAlpha()) + Math.pow(newDegreeNode, config.getAlpha());
-                double acceptanceProbability = getAcceptance(oldSumNodeDegrees, newSumNodeDegrees);
-                if (acceptanceProbability > Math.random() && newSumNodeDegrees > maxSumNodeDegrees) { // Should we consider maxSumNodeDegrees?
-                //if (newSumNodeDegrees * temperature > oldSumNodeDegrees && newSumNodeDegrees > maxSumNodeDegrees) {
-                  bestPartner = node;
-                  maxSumNodeDegrees = newSumNodeDegrees;
-                    // maxSumNodeDegrees = newSumNodeDegrees; // We don't calculate the gain because the aim is just to have max number degree
+
+                if (config.getUseAcceptanceProbability()) {
+                    double acceptanceProbability = getAcceptance(oldSumNodeDegrees, newSumNodeDegrees);
+                    if (acceptanceProbability > Math.random() && (newSumNodeDegrees > maxSumNodeDegrees)) {
+                        bestPartner = node;
+                        maxSumNodeDegrees = newSumNodeDegrees;
+                    }
+                }
+                else {
+                    if ((newSumNodeDegrees * temperature > oldSumNodeDegrees) && (newSumNodeDegrees > maxSumNodeDegrees)) {
+                        bestPartner = node;
+                        maxSumNodeDegrees = newSumNodeDegrees;
+                    }
                 }
             }
         }
@@ -260,11 +263,11 @@ public class Jabeja {
                 ", swaps: " + numberOfSwaps +
                 ", migrations: " + migrations);
 
-        saveToFile(edgeCut, migrations);
+        saveToFile(edgeCut, migrations, CSV_FILE);
+        saveToFile(edgeCut, migrations, TEXT_FILE);
     }
 
-    private void saveToFile(int edgeCuts, int migrations) throws IOException {
-        String delimiter = ",";
+    private void saveToFile(int edgeCuts, int migrations, String delimiter) throws IOException {
         String outputFilePath;
 
         //output file name
@@ -272,14 +275,17 @@ public class Jabeja {
         outputFilePath = config.getOutputDir() +
                 File.separator +
                 inputFile.getName() + "_" +
-                "NS" + "_" + config.getNodeSelectionPolicy() + "_" +
-                "GICP" + "_" + config.getGraphInitialColorPolicy() + "_" +
+//                config.getNodeSelectionPolicy() + "_" +
+//                "GICP" + "_" + config.getGraphInitialColorPolicy() + "_" +
                 "T" + "_" + config.getTemperature() + "_" +
+                "AP" + "_" + config.getUseAcceptanceProbability() + "_" +
+                "R" + "_" + config.getResetEachNIteration() + "_" +
                 "D" + "_" + config.getDelta() + "_" +
-                "RNSS" + "_" + config.getRandomNeighborSampleSize() + "_" +
-                "URSS" + "_" + config.getUniformRandomSampleSize() + "_" +
+//                "RNSS" + "_" + config.getRandomNeighborSampleSize() + "_" +
+//                "URSS" + "_" + config.getUniformRandomSampleSize() + "_" +
                 "A" + "_" + config.getAlpha() + "_" +
-                "R" + "_" + config.getRounds() + ".csv";
+//                "R" + "_" + config.getRounds() +
+                (delimiter.equals(CSV_FILE) ? ".csv" : ".txt");
 
         if (!resultFileCreated) {
             File outputDir = new File(config.getOutputDir());
@@ -289,8 +295,8 @@ public class Jabeja {
                 }
             }
             // create folder and result file with header
-            //String header = "# Migration is number of nodes that have changed color.";
-            String header = "Round" + delimiter + "Edge-Cut" + delimiter + "Swaps" + delimiter + "Migrations" + delimiter + "Skipped" + "\n";
+            String header = "# Migration is number of nodes that have changed color.";
+            header += "\n\nRound" + delimiter + "Edge-Cut" + delimiter + "Swaps" + delimiter + "Migrations" + delimiter + "Skipped" + "\n";
             FileIO.write(header, outputFilePath);
             resultFileCreated = true;
         }

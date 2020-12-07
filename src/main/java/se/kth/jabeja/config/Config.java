@@ -4,6 +4,8 @@ public class Config {
   private Integer numPartitions;
   private Integer rounds;
   private Integer randomNeighborsSampleSize;
+  private Integer resetEachNIteration;
+  private Boolean useAcceptanceProbability;
   private Float temperature;
   private Float delta;
   private Integer seed;
@@ -54,6 +56,16 @@ public class Config {
     return this;
   }
 
+  public Config setResetEachNIteration(Integer resetEachNIteration) {
+    this.resetEachNIteration = resetEachNIteration;
+    return this;
+  }
+
+  public Config setUseAcceptanceProbability(Boolean useAcceptanceProbability) {
+    this.useAcceptanceProbability = useAcceptanceProbability;
+    return this;
+  }
+
   public Config setTemperature(Float temperature) {
     this.temperature = temperature;
     return this;
@@ -93,6 +105,20 @@ public class Config {
       throw new NullPointerException("Close by neighbors are not set");
     }
     return randomNeighborsSampleSize;
+  }
+
+  public Integer getResetEachNIteration() {
+    if (resetEachNIteration == null || resetEachNIteration < 0) {
+      throw new NullPointerException("ResetEachNIteration is not set");
+    }
+    return resetEachNIteration;
+  }
+
+  public Boolean getUseAcceptanceProbability() {
+    if (useAcceptanceProbability == null) {
+      throw new NullPointerException("UseAcceptanceProbability is not set");
+    }
+    return useAcceptanceProbability;
   }
 
   public Float getTemperature() {

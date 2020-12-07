@@ -28,6 +28,12 @@ public class CLI {
   @Option(name = "-uniformRandSampleSize", usage = "Uniform random sample size.")
   private int UNIFORM_RAND_SAMPLE_SIZE = 6;
 
+  @Option(name = "-reset", usage = "Reset SA each X iterations (no reset: 0).")
+  private int RESET_EACH_N_ITERATION = 0;
+
+  @Option(name = "-acceptance", usage = "Use acceptance probability function.")
+  private boolean USE_ACCEPTANCE_PROBABILITY = false;
+
   @Option(name = "-temp", usage = "Simulated annealing temperature.")
   private float TEMPERATURE = 2;
 
@@ -105,6 +111,8 @@ public class CLI {
             .setUniformRandSampleSize(UNIFORM_RAND_SAMPLE_SIZE)
             .setRounds(ROUNDS)
             .setSeed(SEED)
+            .setResetEachNIteration(RESET_EACH_N_ITERATION)
+            .setUseAcceptanceProbability(USE_ACCEPTANCE_PROBABILITY)
             .setTemperature(TEMPERATURE)
             .setGraphFilePath(GRAPH)
             .setNodeSelectionPolicy(nodeSelectionPolicy)
