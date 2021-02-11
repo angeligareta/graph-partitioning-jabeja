@@ -35,7 +35,23 @@ The code can be run using the helper scripts ‘compile’, ‘run -graph <graph
 
 The full results can be found in the [final report](docs/report.pdf).
 
+## Modifications
+With the aim of improving the original algorithm, some modifications were tested:
+- Avoiding simulated annealing. This modification resulted in fast convergence and poor results.
+- Instead of maximizing the sum of node degrees, take also into account the degree increment compared to the total number of neighbors of the node.
+- Modifying the acceptance probability function to ‘newEdgeCut / oldEdgeCut’.
+- Modifying the simulated annealing to accept the solutions every time they are better and use the acceptance probability function when they are worse. 
+- Modifying the acceptance probability function to ‘Math.pow(2, 1/(round+1))’ and the minimum temperature to 1.0001, so that it does not follow an exponential distribution as the normal simulated annealing proposes. Also, other functions were tested for the same aim but the results were very similar.
+ 
+The best results modifying the original solutions were obtained with the 4th modification, the results were the following:
+Dataset | SA-Reset | SA-No-Reset
+| ------------- |:-------------:| -----:|
+3elt | **823** | 1306
+add20 | **2187** | 2207
+Twitter | **40941** | 40944
+
 ## Authors
 
+- Original authors of the [JaBeJa repository](https://github.com/smkniazi/id2222).
 - Serghei Socolovschi [serghei@kth.se](mailto:serghei@kth.se)
 - Angel Igareta [alih2@kth.se](mailto:alih2@kth.se)
